@@ -1,0 +1,23 @@
+{
+    "version": 3,
+    "configurePresets": [
+      {
+        "name": "default",
+        "description": "Default configuration using Unix Makefiles",
+        "generator": "Unix Makefiles",
+        "binaryDir": "${sourceDir}/build",
+        "cacheVariables": {
+          "CMAKE_BUILD_TYPE": "Debug",
+          "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
+        }
+      }
+    ],
+    "buildPresets": [
+      {
+        "name": "default",
+        "configurePreset": "default",
+        "description": "Build using Unix Makefiles",
+        "jobs": 4
+      }
+    ]
+  }
