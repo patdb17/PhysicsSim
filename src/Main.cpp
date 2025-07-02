@@ -17,7 +17,7 @@ int main()
     Logger_t::logPtr = &logger;
 
     // // Run the unit tests
-    LogTimerTest();
+    // LogTimerTest();
 
     std::cout << std::format("Hello, World! This is a C++23 formatted string.\n");
     if (!glfwInit()) {
@@ -43,7 +43,6 @@ int main()
 
     std::cout << "GLEW version: " << glewGetString(GLEW_VERSION) << "\n"; 
     glfwTerminate();
-    return 0;
 
     return 0;
 }
