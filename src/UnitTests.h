@@ -6,7 +6,7 @@
 
 //===============================================================
 // LogTimerTest()
-// This function tests the performance of the Logger_t class
+// This function tests the performance of the Logger class
 // and the std::cout stream by measuring the time taken to log
 // a number of messages using both methods. It compares the
 // average time taken for each method and logs the results.

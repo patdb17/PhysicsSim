@@ -4,17 +4,14 @@
 #include <format>
 
 #include "Logger.h"
-//Timer_t:: Timer_t() {}
-//Timer_t::~Timer_t(){}
-//• Stop(const int id)
 
-void Timer_t::Start()
+void Timer::Start()
 {
     // Get the start time
     c_startTime = std::chrono::high_resolution_clock::now();
 }
 
-std::chrono::microseconds Timer_t::Stop(const int id)
+std::chrono::microseconds Timer::Stop(const int id)
 {
     // Get the stop time
     MsTimer endTime = std::chrono::high_resolution_clock::now();
@@ -28,7 +25,7 @@ std::chrono::microseconds Timer_t::Stop(const int id)
     return duration;
 }
 
-void Timer_t::PrintTime(const std::chrono::microseconds duration, const int id)
+void Timer::PrintTime(const std::chrono::microseconds & duration, const int id)
 {
-    Logger_t::logPtr->Log(std::format("ID; {}, Time passed = {}us", id, duration.count()));
+    LOG(LogLevel::INFO, "TimerID: {}, Time passed = {}us", id, duration.count());
 }

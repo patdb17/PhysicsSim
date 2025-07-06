@@ -3,57 +3,49 @@
 #include <thread>
 #include <mutex>
 #include <iostream> 
+#include <format>
+#include <string_view>
 
 
-Logger_t::Logger_t()
+Logger::Logger()
 {
-    logPtr = this;
+    m_logPtr = this;
     std::ios_base::sync_with_stdio(false);
-    c_logThread = std::thread(&Logger_t::RunLogger, this);
+    m_logThread = std::thread(&Logger::RunLogger, this);
+    LOG(LogLevel::WARNING, "Starting Logging...");
 }
 
-Logger_t::~Logger_t()
+Logger::~Logger()
 {
-    Log("Finishing Logging...");
+    LOG(LogLevel::WARNING, "Finishing Logging...");
 
     // Tell the logging thread to finish up and update condition variable
-    c_finishLogging = true;
-    c_cv.notify_one();
+    m_finishLogging = true;
+    m_cv.notify_one();
 
     // Wait for the thread to finish logging
-    c_logThread.join();
+    m_logThread.join();
 }
 
-void Logger_t::Log(const messageType& msg)
-{
-    {
-        std::lock_guard queueUpdatelock(c_queueMutex);
-        c_queue.push(msg);
-    } // Unlock mutex before updating condition variable
-
-    // Update condition variable
-    c_cv.notify_one();
-}
-
-void Logger_t::RunLogger()
+void Logger::RunLogger()
 {
     // Run loop until no more messages to log and the class is being destroyed
-    while (!c_queue.empty() || !c_finishLogging)
+    while (!m_queue.empty() || !m_finishLogging)
     {
         // Mutex lock and wait
-        std::unique_lock queueReadLock(c_queueMutex);
+        std::unique_lock queueReadLock(m_queueMutex);
         // Wait for a message to be available in the queue or for the logging to finish
-        c_cv.wait(queueReadLock, [this] {return !c_queue.empty() || c_finishLogging;});
+        m_cv.wait(queueReadLock, [this] {return !m_queue.empty() || m_finishLogging;});
 
         // If the queue is empty and we're not finishing, wait for the condition variable
-        if (c_queue.empty())
+        if (m_queue.empty())
         {
             continue;
         }
 
         // Get the message and remove it from the queue
-        const messageType msg = c_queue.front();
-        c_queue.pop();
+        const messageType msg = m_queue.front();
+        m_queue.pop();
         // Since we're done messing with the queue, unlock the mutex
         queueReadLock.unlock();
 

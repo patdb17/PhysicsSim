@@ -6,19 +6,19 @@
 
 typedef std::chrono::time_point<std::chrono::high_resolution_clock> MsTimer;
 
-class Timer_t
+class Timer
 {
 public:
-    //Timer_t();
-    //~Timer_t();
+    //Timer();
+    //~Timer();
 
     void                      Start();
     std::chrono::microseconds Stop(const int id = -1);
 
 private:
-    void PrintTime(const std::chrono::microseconds duration, const int id);
+    void PrintTime(const std::chrono::microseconds & duration, const int id);
     
-    MsTimer     c_startTime;
+    MsTimer c_startTime;
 };
 
 #endif // !TIMING_H
