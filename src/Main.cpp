@@ -9,16 +9,16 @@
 #include "Timing.h"
 #include "UnitTests.h"
 
-Logger* Logger::m_logPtr = nullptr;
 
 int main() 
 {
     // Create the logger object
     Logger logger;
-    Logger::m_logPtr = &logger;
+    loggerPtr = &logger;
+    LOG(LogLevel::WARNING, "Starting Logging...");
 
     // Run the unit tests
-    //LogTimerTest();
+    LogTimerTest();
 
     LOG(LogLevel::INFO, "Hello, World! This is my OpenGL application using GLEW and GLFW.");
     if (!glfwInit()) {

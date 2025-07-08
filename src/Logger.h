@@ -2,13 +2,13 @@
 #define LOGGER_H
 // Logger.h
 // This file contains the definition of the Logger class.
-// The Logger class is a singleton that provides a thread-safe logging mechanism.
+// The Logger class provides a thread-safe logging mechanism.
 // It uses a separate thread to handle logging messages, allowing the main thread
 // to continue executing without blocking.
 // The logger uses a queue to store messages and a condition variable to signal
 // the logging thread when there are messages to log.
-// The logger can be used from any thread, and it is safe to call the LogMessage
-// method from multiple threads simultaneously.
+// The logger can be used from any thread, and it is safe to call the LOG
+// macro from multiple threads simultaneously.
 
 #include <mutex>
 #include <condition_variable>
@@ -18,9 +18,11 @@
 #include <format>
 #include <thread>
 #include <atomic>
-#include <iostream>
+#include <print>
 
 #include <GL/glew.h> // For GLubyte type
+
+#include "Timing.h"
 
 enum class LogLevel
 {
@@ -29,44 +31,47 @@ enum class LogLevel
     ERROR,
     DEBUG
 };
+
 class Logger
 {
 public:
-    // Pointer to a logging object for use by any file that includes this header.
-    // Logger* Logger::m_logPtr = nullptr; // This should be declared above main,
-    // and the actual object must be created in main.
-    static Logger* m_logPtr;
-
     Logger();
     ~Logger();
 
-    typedef std::string messageType;
-
-    template<typename... Args>
-    static inline void Log( const LogLevel level, 
-                            const std::string_view sourceFile,
-                            const unsigned int lineNumber,
-                            const std::string_view msg,
-                            Args&&... args)
+    // Method to log messages with a specific log level, source file, line number, and message
+    // Accessed via the LOG macro, which automatically includes the source file and line number.
+    // Example usage: LOG(LogLevel::INFO, "This is a log message with value: {}", value);
+    // The macro automatically includes the function name and line number in the log message
+    inline void Log(const LogLevel level, 
+                    const std::string sourceFile,
+                    const unsigned int lineNumber,
+                    const std::string& msg)
     {
         // Create a formatted log message with the level, source file, line number, and message
-        const std::string logMsg = std::vformat("{:<8} [{:<15}:{:<3}] {}", std::make_format_args(to_string(level), sourceFile, lineNumber,
-                                                std::vformat(msg, std::make_format_args(std::forward<Args>(args)...))));
-        
-        // Check if the logger is initialized
-        if (m_logPtr != nullptr)
-        {
-            // If the logger is initialized, push the message to the queue
-            m_logPtr->PushMessage(logMsg);
-        }
-        else
-        {
-            // If the logger is not initialized, print to std::cout
-            std::cout << logMsg << "\n";
-        }
+        messageType logMsg(level, sourceFile, lineNumber, msg);
+
+        // Push the message to the queue
+        PushMessage(logMsg);
     }
 
 private:
+    // Structure to hold the log message
+    struct msgStruct
+    {
+        LogLevel level;
+        std::string sourceFile;
+        unsigned int lineNumber;
+        std::string message;
+
+        // Constructor to initialize the message structure
+        msgStruct(LogLevel lvl, std::string file, unsigned int line, std::string msg)
+            : level(lvl), sourceFile(std::move(file)), lineNumber(line), message(msg) 
+        {}
+    };
+    typedef msgStruct messageType;
+
+    bool                    m_debugLogger = false; // Flag to indicate if debug mode is enabled
+    size_t                  m_queueMaxSize = 0;
     std::queue<messageType> m_queue;
     std::mutex              m_queueMutex;
     std::condition_variable m_cv;
@@ -78,7 +83,7 @@ private:
     {
         {
             std::lock_guard queueUpdatelock(m_queueMutex);
-            m_queue.push(msg);
+            m_queue.emplace(msg);
         } // Unlock mutex before updating condition variable
     
         // Update condition variable
@@ -99,8 +104,21 @@ private:
     }
 };
 
-// Macro
-#define LOG(level, ...) Logger::m_logPtr->Log(level, __func__, __LINE__, __VA_ARGS__)
+// Helper function to extract base file name from __FILE__
+inline std::string_view GetBaseFileName(std::string_view file)
+{
+    size_t lastSep = file.find_last_of("/\\");
+    return (lastSep == std::string_view::npos) ? file : file.substr(lastSep + 1);
+}
+
+// Pointer to a logging object for use by any file that includes this header.
+// The actual object must be created in main.
+inline Logger* loggerPtr = nullptr;
+
+// Macro to log messages
+// Usage: LOG(LogLevel::INFO, "This is a log message with value: {}", value);
+// The macro automatically includes the function name and line number in the log message.
+#define LOG(level, formatStr, ...) loggerPtr->Log(level, __FILE__, __LINE__, std::format(formatStr, ##__VA_ARGS__))
 
 inline std::string_view GlewStrToStrView(const GLubyte* glewStr)
 {

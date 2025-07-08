@@ -2,22 +2,24 @@
 
 #include <thread>
 #include <mutex>
-#include <iostream> 
+#include <print> 
 #include <format>
 #include <string_view>
-
+#include <iostream>
 
 Logger::Logger()
 {
-    m_logPtr = this;
     std::ios_base::sync_with_stdio(false);
     m_logThread = std::thread(&Logger::RunLogger, this);
-    LOG(LogLevel::WARNING, "Starting Logging...");
 }
 
 Logger::~Logger()
 {
     LOG(LogLevel::WARNING, "Finishing Logging...");
+    if (m_debugLogger)
+    {
+        LOG(LogLevel::DEBUG, "Max queue size during logging: {}", m_queueMaxSize);
+    }
 
     // Tell the logging thread to finish up and update condition variable
     m_finishLogging = true;
@@ -43,13 +45,18 @@ void Logger::RunLogger()
             continue;
         }
 
+        if (m_queue.size() > m_queueMaxSize)
+        {
+            m_queueMaxSize = m_queue.size();
+        }
+
         // Get the message and remove it from the queue
-        const messageType msg = m_queue.front();
+        const messageType msg = std::move(m_queue.front());
         m_queue.pop();
         // Since we're done messing with the queue, unlock the mutex
         queueReadLock.unlock();
 
         // Output the message
-        std::cout << msg << "\n";
+        std::println("{:<8} [{:<15}:{:<3}] {}", to_string(msg.level), GetBaseFileName(msg.sourceFile), msg.lineNumber, msg.message);
     }
 }
