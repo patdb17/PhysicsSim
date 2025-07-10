@@ -47,11 +47,16 @@ public:
                     const unsigned int lineNumber,
                     const std::string& msg)
     {
-        // Create a formatted log message with the level, source file, line number, and message
-        messageType logMsg(level, sourceFile, lineNumber, msg);
+        {
+            // Lock the mutex when modifying the queue
+            std::lock_guard queueUpdatelock(m_queueMutex);
 
-        // Push the message to the queue
-        PushMessage(logMsg);
+            // Construct the message structure in the queue
+            m_queue.emplace(level, sourceFile, lineNumber, msg);
+        } // Unlock mutex before updating condition variable
+    
+        // Update condition variable
+        m_cv.notify_one();
     }
 
 private:
@@ -70,7 +75,7 @@ private:
     };
     typedef msgStruct messageType;
 
-    bool                    m_debugLogger = false; // Flag to indicate if debug mode is enabled
+    bool                    m_debugLogger = false; // Flag to indicate if debug prints in the logger itself should print
     size_t                  m_queueMaxSize = 0;
     std::queue<messageType> m_queue;
     std::mutex              m_queueMutex;
@@ -78,17 +83,9 @@ private:
     std::atomic<bool>       m_finishLogging = false;
     std::thread             m_logThread;
 
+    // Function to run the logging thread
+    // This function will continuously check for messages in the queue and log them.
     void RunLogger();
-    inline void PushMessage(const messageType& msg)
-    {
-        {
-            std::lock_guard queueUpdatelock(m_queueMutex);
-            m_queue.emplace(msg);
-        } // Unlock mutex before updating condition variable
-    
-        // Update condition variable
-        m_cv.notify_one();
-    }
 
     // Convert LogLevel to string
     constexpr static inline std::string to_string(const LogLevel level)
@@ -102,14 +99,14 @@ private:
             default:                return "UNKNOWN";
         }
     }
-};
 
-// Helper function to extract base file name from __FILE__
-inline std::string_view GetBaseFileName(std::string_view file)
-{
-    size_t lastSep = file.find_last_of("/\\");
-    return (lastSep == std::string_view::npos) ? file : file.substr(lastSep + 1);
-}
+    // Helper function to extract base file name from __FILE__
+    inline std::string_view GetBaseFileName(std::string_view file)
+    {
+        size_t lastSep = file.find_last_of("/\\");
+        return (lastSep == std::string_view::npos) ? file : file.substr(lastSep + 1);
+    }
+};
 
 // Pointer to a logging object for use by any file that includes this header.
 // The actual object must be created in main.
@@ -120,6 +117,8 @@ inline Logger* loggerPtr = nullptr;
 // The macro automatically includes the function name and line number in the log message.
 #define LOG(level, formatStr, ...) loggerPtr->Log(level, __FILE__, __LINE__, std::format(formatStr, ##__VA_ARGS__))
 
+// Function to convert a GLEW string (GLubyte*) to a std::string_view
+// This is useful for logging GLEW error messages or version strings.
 inline std::string_view GlewStrToStrView(const GLubyte* glewStr)
 {
     if (glewStr == nullptr) {

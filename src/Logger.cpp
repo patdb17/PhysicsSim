@@ -9,7 +9,7 @@
 
 Logger::Logger()
 {
-    std::ios_base::sync_with_stdio(false);
+    std::ios_base::sync_with_stdio(false); // Disable synchronization with C-style I/O for performance
     m_logThread = std::thread(&Logger::RunLogger, this);
 }
 
