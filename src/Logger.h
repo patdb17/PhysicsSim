@@ -19,6 +19,7 @@
 #include <thread>
 #include <atomic>
 #include <print>
+#include <chrono> // For time-related functions
 
 #include <GL/glew.h> // For GLubyte type
 
@@ -47,12 +48,14 @@ public:
                     const unsigned int lineNumber,
                     const std::string& msg)
     {
+        // Get the current date
+        const std::chrono::time_point msgTime{ std::chrono::system_clock::now() };
         {
             // Lock the mutex when modifying the queue
             std::lock_guard queueUpdatelock(m_queueMutex);
 
             // Construct the message structure in the queue
-            m_queue.emplace(level, sourceFile, lineNumber, msg);
+            m_queue.emplace(msgTime, level, sourceFile, lineNumber, msg);
         } // Unlock mutex before updating condition variable
     
         // Update condition variable
@@ -63,14 +66,15 @@ private:
     // Structure to hold the log message
     struct msgStruct
     {
+        std::chrono::time_point<std::chrono::system_clock> messageTime; // Time of day when the message was logged
         LogLevel level;
         std::string sourceFile;
         unsigned int lineNumber;
         std::string message;
 
         // Constructor to initialize the message structure
-        msgStruct(LogLevel lvl, std::string file, unsigned int line, std::string msg)
-            : level(lvl), sourceFile(std::move(file)), lineNumber(line), message(msg) 
+        msgStruct(std::chrono::time_point<std::chrono::system_clock> time, LogLevel lvl, std::string file, unsigned int line, std::string msg)
+            : messageTime(time), level(lvl), sourceFile(std::move(file)), lineNumber(line), message(msg) 
         {}
     };
     typedef msgStruct messageType;
@@ -101,7 +105,7 @@ private:
     }
 
     // Helper function to extract base file name from __FILE__
-    inline std::string_view GetBaseFileName(std::string_view file)
+    constexpr inline std::string_view GetBaseFileName(std::string_view file)
     {
         size_t lastSep = file.find_last_of("/\\");
         return (lastSep == std::string_view::npos) ? file : file.substr(lastSep + 1);

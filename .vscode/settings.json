@@ -141,7 +141,8 @@
         "stdfloat": "cpp",
         "syncstream": "cpp",
         "typeindex": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "print": "cpp"
     },
 
     "cmake.debugConfig": {

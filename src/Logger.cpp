@@ -6,6 +6,9 @@
 #include <format>
 #include <string_view>
 #include <iostream>
+#include <chrono>
+#include <ctime>
+#include <iomanip>
 
 Logger::Logger()
 {
@@ -31,6 +34,32 @@ Logger::~Logger()
 
 void Logger::RunLogger()
 {
+    // Get the current date
+    const std::chrono::time_point now{ std::chrono::system_clock::now() };
+    const std::chrono::year_month_day ymd{std::chrono::floor<std::chrono::days>(now)};
+
+    // Output the current date in YYYY-MM-DD format
+    const std::string dateString = std::format("{}-{:02}-{:02}", 
+                static_cast<int>     (ymd.year()),
+                static_cast<unsigned>(ymd.month()),
+                static_cast<unsigned>(ymd.day()));
+
+    // Get the time of day in hh:mm:ss format
+    const std::time_t nowTimeT = std::chrono::system_clock::to_time_t(now);
+    const std::tm localTime = *std::localtime(&nowTimeT);
+    const std::chrono::milliseconds ms {std::chrono::duration_cast<std::chrono::milliseconds>(now 
+                                        - std::chrono::floor<std::chrono::seconds>(now)).count() / 10};
+
+    // Format time to hundredths of a second (HH:MM:SS.hh)
+    const std::string timeString = std::format("{:02}:{:02}:{:02}.{:<2}",
+        localTime.tm_hour, localTime.tm_min, localTime.tm_sec, ms.count());
+
+    // Output initial message indicating the logger has started
+    std::println("----------------------------------------------------------------------------------------");
+    std::println("{}  {:<8} [{:<20}:{:<3}] Started Logger... {}", 
+        timeString, to_string(LogLevel::INFO), GetBaseFileName(__FILE__), __LINE__, dateString);
+    std::println("----------------------------------------------------------------------------------------");
+
     // Run loop until no more messages to log and the class is being destroyed
     while (!m_queue.empty() || !m_finishLogging)
     {
@@ -56,7 +85,19 @@ void Logger::RunLogger()
         // Since we're done messing with the queue, unlock the mutex
         queueReadLock.unlock();
 
+        const std::time_t messageTimeT = std::chrono::system_clock::to_time_t(msg.messageTime);
+        const std::tm     messageLocalTime = *std::localtime(&messageTimeT);
+        const std::chrono::milliseconds ms {std::chrono::duration_cast<std::chrono::milliseconds>(msg.messageTime 
+                                        - std::chrono::floor<std::chrono::seconds>(msg.messageTime)).count() / 10};
+
+        // Format time to hundredths of a second (HH:MM:SS.hh)
+        const std::string timeString = std::format("{:02}:{:02}:{:02}.{:<2}",
+            messageLocalTime.tm_hour, messageLocalTime.tm_min, messageLocalTime.tm_sec, ms.count());
+
         // Output the message
-        std::println("{:<8} [{:<15}:{:<3}] {}", to_string(msg.level), GetBaseFileName(msg.sourceFile), msg.lineNumber, msg.message);
+        std::println("{}  {:<8} [{:<20}:{:<3}] {}", timeString, to_string(msg.level), GetBaseFileName(msg.sourceFile), msg.lineNumber, msg.message);
     }
+
+    // End the logging with two empty lines
+    std::print("\n\n");
 }
