@@ -62,6 +62,38 @@ public:
         m_cv.notify_one();
     }
 
+    // Public static method to get the time of day in hh:mm:ss format
+    static inline std::string GetTimeString(const std::chrono::time_point<std::chrono::system_clock> now)
+    {
+        // Get the time of day in hh:mm:ss format
+        const std::time_t nowTimeT = std::chrono::system_clock::to_time_t(now);
+        const std::tm localTime = *std::localtime(&nowTimeT);
+        const std::chrono::milliseconds ms {std::chrono::duration_cast<std::chrono::milliseconds>(now 
+                                            - std::chrono::floor<std::chrono::seconds>(now)).count() / 10};
+
+        // Format time to hundredths of a second (HH:MM:SS.hh)
+        return std::format("{:02}:{:02}:{:02}.{:<2}",
+            localTime.tm_hour, localTime.tm_min, localTime.tm_sec, ms.count());
+    }
+
+    // Public static method to immediately print a message to the console. 
+    // Useful when the program is crashing and you want to log a message before exiting.
+    static inline void PrintMessageNow(const LogLevel     level,
+                                       const std::string& sourceFile,
+                                       const unsigned int lineNumber,
+                                       const std::string& message)
+    {
+        // Output the message
+        PrintMessage(GetTimeString(std::chrono::system_clock::now()), level, sourceFile, lineNumber, message);
+    }
+
+    // Helper function to extract base file name from __FILE__
+    constexpr static inline std::string_view GetBaseFileName(std::string_view file)
+    {
+        size_t lastSep = file.find_last_of("/\\");
+        return (lastSep == std::string_view::npos) ? file : file.substr(lastSep + 1);
+    }
+
 private:
     // Structure to hold the log message
     struct msgStruct
@@ -91,6 +123,17 @@ private:
     // This function will continuously check for messages in the queue and log them.
     void RunLogger();
 
+    // Private static method to print a message to the console with the correct format
+    static inline void PrintMessage(const std::string& timeString,
+                                    const LogLevel     level,
+                                    const std::string& sourceFile,
+                                    const unsigned int lineNumber,
+                                    const std::string& message)
+    {
+        // Output the message
+        std::println("{}  {:<8} [{:<20}:{:<3}] {}", timeString, to_string(level), GetBaseFileName(sourceFile), lineNumber, message);
+    }
+
     // Convert LogLevel to string
     constexpr static inline std::string to_string(const LogLevel level)
     {
@@ -103,13 +146,6 @@ private:
             default:                return "UNKNOWN";
         }
     }
-
-    // Helper function to extract base file name from __FILE__
-    constexpr inline std::string_view GetBaseFileName(std::string_view file)
-    {
-        size_t lastSep = file.find_last_of("/\\");
-        return (lastSep == std::string_view::npos) ? file : file.substr(lastSep + 1);
-    }
 };
 
 // Pointer to a logging object for use by any file that includes this header.
@@ -120,15 +156,5 @@ inline Logger* loggerPtr = nullptr;
 // Usage: LOG(LogLevel::INFO, "This is a log message with value: {}", value);
 // The macro automatically includes the function name and line number in the log message.
 #define LOG(level, formatStr, ...) loggerPtr->Log(level, __FILE__, __LINE__, std::format(formatStr, ##__VA_ARGS__))
-
-// Function to convert a GLEW string (GLubyte*) to a std::string_view
-// This is useful for logging GLEW error messages or version strings.
-inline std::string_view GlewStrToStrView(const GLubyte* glewStr)
-{
-    if (glewStr == nullptr) {
-        return std::string_view();
-    }
-    return std::string_view(reinterpret_cast<const char*>(glewStr));
-}
 
 #endif // !LOGGER_H
