@@ -11,33 +11,31 @@ class CircularBuffer
 {
     private:
         std::vector<T> m_Buffer;
-        size_t m_Head; // Points to the oldest element
-        size_t m_Tail; // Points to the next insertion point, hence the buffer grows at the tail when elements are added
+        size_t m_ReadIdx; // Points to the oldest element
+        size_t m_WriteIdx; // Points to the next insertion point
         bool m_Full;
 
-        // Move head forward
-        inline void IncrementHead()
+        inline void IncrementReadIdx()
         {
             if (m_Buffer.capacity() > 0)
             {
-                m_Head = (m_Head + 1) % m_Buffer.capacity(); 
+                m_ReadIdx = (m_ReadIdx + 1) % m_Buffer.capacity(); 
             }
             else
             {
-                m_Head++;
+                m_ReadIdx++;
             }
         }
 
-        // Move tail forward
-        inline void IncrementTail()
+        inline void IncrementWriteIdx()
         {
             if (m_Buffer.capacity() > 0)
             {
-                m_Tail = (m_Tail + 1) % m_Buffer.capacity();
+                m_WriteIdx = (m_WriteIdx + 1) % m_Buffer.capacity();
             }
             else
             {
-                m_Tail++;
+                m_WriteIdx++;
             }
         }
 
@@ -74,8 +72,8 @@ class CircularBuffer
             }
 
             m_Buffer.reserve(size);
-            m_Head = 0;
-            m_Tail = 0;
+            m_ReadIdx = 0;
+            m_WriteIdx = 0;
             m_Full = false;
         }
 
@@ -85,12 +83,12 @@ class CircularBuffer
 
         bool empty() const
         {
-            return (!m_Full && (m_Head == m_Tail));
+            return (!m_Full && (m_ReadIdx == m_WriteIdx));
         }
 
         size_t size() const
         {
-            int size = m_Tail - m_Head;
+            int size = m_WriteIdx - m_ReadIdx;
             if (size < 0)
             {
                 size += m_Buffer.capacity();
@@ -101,7 +99,7 @@ class CircularBuffer
 
         T front()
         {
-            return m_Buffer[m_Head];
+            return m_Buffer[m_ReadIdx];
         }
 
         void pop()
@@ -112,7 +110,7 @@ class CircularBuffer
                 return;
             }
 
-            IncrementHead();
+            IncrementReadIdx();
             m_Full = false;
         }
 
@@ -134,15 +132,15 @@ class CircularBuffer
                 }
                 else
                 {
-                    // Move head forward to overwrite the oldest data
-                    IncrementHead();
+                    // Move read index forward to overwrite the oldest data
+                    IncrementReadIdx();
                 }
             }
 
-            // Place the new item at the tail position
-            new (&m_Buffer[m_Tail]) T(std::forward<Args>(args)...); // Placement new
-            IncrementTail(); // Move tail forward
-            m_Full = (m_Head == m_Tail);
+            // Place the new item at the write position
+            new (&m_Buffer[m_WriteIdx]) T(std::forward<Args>(args)...); // Placement new
+            IncrementWriteIdx(); // Move write index forward
+            m_Full = (m_ReadIdx == m_WriteIdx);
         }
 };
 
