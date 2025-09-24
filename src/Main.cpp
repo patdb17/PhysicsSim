@@ -27,7 +27,7 @@ int main()
     loggerPtr = &logger;
 
     // Run the unit tests
-    //LogTimerTest();
+    LogTimerTest();
 
     LOG(LogLevel::INFO, "Hello, World! This is my OpenGL application using GLEW and GLFW.");
     

@@ -12,7 +12,7 @@ bool GlLogCall(const char*        functionName,
     while (unsigned int error = glGetError())
     {
         // Log the error immediately using the Logger class's formatting and bypass the queue
-        Logger::PrintMessageNow(LogLevel::ERROR, fileName, lineNumber, 
+        PrintMessageNow(LogLevel::ERROR, fileName, lineNumber, 
                 std::format("OpenGL Error Logged: Function call - {} : Error - {}", functionName, GetGlErrorString(error)));
 
         return false; // Return false if an error occurred

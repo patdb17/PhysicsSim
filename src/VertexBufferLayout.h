@@ -24,7 +24,7 @@ struct VertexBufferElement
             case GL_UNSIGNED_BYTE: return sizeof(GLubyte);
             default:
                 // Log an error message if an unsupported type is encountered
-                Logger::PrintMessageNow(LogLevel::ERROR, __FILE__, __LINE__, 
+                PrintMessageNow(LogLevel::ERROR, __FILE__, __LINE__, 
                     std::format("Unsupported type in VertexBufferElement: {}", type));              
                 ASSERT(false); // Unsupported type
                 return 0; // Unsupported type
