@@ -1,21 +1,14 @@
 #include "Renderer.h"
 
-void GlClearError()
+void Renderer::Clear() const
 {
-    while (glGetError() != GL_NO_ERROR);
+    GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
 }
 
-bool GlLogCall(const char*        functionName, 
-               const char*        fileName, 
-               const unsigned int lineNumber)
+void Renderer::Draw(const VertexArray& va, const IndexBuffer& ib, const Shader& shader) const
 {
-    while (unsigned int error = glGetError())
-    {
-        // Log the error immediately using the Logger class's formatting and bypass the queue
-        PrintMessageNow(LogLevel::ERROR, fileName, lineNumber, 
-                std::format("OpenGL Error Logged: Function call - {} : Error - {}", functionName, GetGlErrorString(error)));
-
-        return false; // Return false if an error occurred
-    }
-    return true; // Return true if no errors occurred
+    shader.Bind();
+    va.Bind();
+    ib.Bind();
+    GL_CALL(glDrawElements(GL_TRIANGLES, ib.GetCount(), GL_UNSIGNED_INT, nullptr));
 }

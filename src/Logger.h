@@ -22,7 +22,7 @@
 #include <GL/glew.h> // For GLubyte type
 
 #include "LoggerHelper.h"
-#include "Timing.h"
+#include "Timer.h"
 #include "CircularBuffer.h"
 
 class Logger
@@ -36,8 +36,8 @@ public:
     // Example usage: LOG(LogLevel::INFO, "This is a log message with value: {}", value);
     // The macro automatically includes the function name and line number in the log message
     inline void Log(const LogLevel level, 
-                    const std::string sourceFile,
                     const unsigned int lineNumber,
+                    const std::string sourceFile,
                     const std::string& msg)
     {
         // Get the current date
@@ -47,31 +47,34 @@ public:
             std::lock_guard queueUpdatelock(m_queueMutex);
 
             // Construct the message structure in the queue
-            m_queue.emplace(msgTime, level, sourceFile, lineNumber, msg);
+            m_queue.emplace(msgTime, level, lineNumber, sourceFile, msg);
         } // Unlock mutex before updating condition variable
     
         // Update condition variable
         m_cv.notify_one();
     }
 
-private:
+// private:
     // Structure to hold the log message
     struct msgStruct
     {
         std::chrono::time_point<std::chrono::system_clock> messageTime; // Time of day when the message was logged
         LogLevel level;
-        std::string sourceFile;
         unsigned int lineNumber;
+        std::string sourceFile;
         std::string message;
 
+        msgStruct() = default; // Default constructor
+
         // Constructor to initialize the message structure
-        msgStruct(std::chrono::time_point<std::chrono::system_clock> time, LogLevel lvl, std::string file, unsigned int line, std::string msg)
-            : messageTime(time), level(lvl), sourceFile(std::move(file)), lineNumber(line), message(msg) 
+        msgStruct(std::chrono::time_point<std::chrono::system_clock> time, LogLevel lvl, unsigned int line, std::string file, std::string msg)
+            : messageTime(time), level(lvl), lineNumber(line), sourceFile(std::move(file)), message(msg) 
         {}
     };
     typedef msgStruct messageType;
+private:
 
-    bool                    m_debugLogger = true; // Flag to indicate if debug prints in the logger itself should print
+    const bool              m_debugLogger = true; // Flag to indicate if debug prints in the logger itself should print
     size_t                  m_queueMaxSize = 0;
     CircularBuffer<messageType> m_queue; // Circular buffer to hold messages
     std::mutex              m_queueMutex;
@@ -91,6 +94,6 @@ inline Logger* loggerPtr = nullptr;
 // Macro to log messages
 // Usage: LOG(LogLevel::INFO, "This is a log message with value: {}", value);
 // The macro automatically includes the function name and line number in the log message.
-#define LOG(level, formatStr, ...) loggerPtr->Log(level, __FILE__, __LINE__, std::format(formatStr, ##__VA_ARGS__))
+#define LOG(level, formatStr, ...) loggerPtr->Log(level, __LINE__, __FILE__, std::format(formatStr, ##__VA_ARGS__))
 
 #endif // !LOGGER_H

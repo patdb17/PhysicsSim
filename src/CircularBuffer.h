@@ -42,6 +42,7 @@ class CircularBuffer
         inline void ExtendBuffer()
         {
             const size_t oldCapacity = m_Buffer.capacity();
+
             size_t newCapacity = oldCapacity * 2;
             if (newCapacity == 0)
             {
@@ -49,20 +50,35 @@ class CircularBuffer
             }
             else if (newCapacity > m_Buffer.max_size())
             {
-                PrintMessageNow(LogLevel::ERROR, __FILE__, __LINE__, 
+                PrintMessageNow(LogLevel::ERROR, __LINE__, __FILE__, 
                     std::format("Cannot resize circular buffer beyond its max size of {} elements", m_Buffer.max_size()));
                 return;
             }
+            
+            // Make a new buffer with double the size
+            std::vector<T> newBuffer;
+            newBuffer.resize(newCapacity);
 
-            m_Buffer.reserve(oldCapacity * 2); // Double the size of the buffer
+            // Copy the old elements to the new buffer in the correct order
+            const size_t currentSize = size();
+            for (size_t i = 0; i < currentSize; ++i)
+            {
+                newBuffer[i] = std::move(m_Buffer[(m_ReadIdx + i) % oldCapacity]);
+            }
+
+            // Replace the old buffer with the new one and reset indices
+            m_Buffer = std::move(newBuffer);
+            m_ReadIdx = 0;
+            m_WriteIdx = currentSize;
+            m_Full = false;
         }
 
     public:
-        CircularBuffer(size_t size = 8192) // Default size is 8192
+        CircularBuffer(size_t size = 4096) // Default size is 4096
         {
             if (size > m_Buffer.max_size())
             {
-                PrintMessageNow(LogLevel::ERROR, __FILE__, __LINE__, 
+                PrintMessageNow(LogLevel::ERROR, __LINE__, __FILE__, 
                     std::format("Cannot create circular buffer larger than its max size of {} elements", m_Buffer.max_size()));
                 size = m_Buffer.max_size();
             }
@@ -71,7 +87,7 @@ class CircularBuffer
                 size = 2; // Minimum size of 2
             }
 
-            m_Buffer.reserve(size);
+            m_Buffer.resize(size);
             m_ReadIdx = 0;
             m_WriteIdx = 0;
             m_Full = false;
@@ -93,6 +109,10 @@ class CircularBuffer
             {
                 size += m_Buffer.capacity();
             }
+            else if (m_Full && size == 0)
+            {
+                size = static_cast<int>(m_Buffer.capacity());
+            }
 
             return static_cast<size_t>(size);
         }
@@ -106,7 +126,7 @@ class CircularBuffer
         {
             if (empty())
             {
-                PrintMessageNow(LogLevel::ERROR, __FILE__, __LINE__, "Attempted to pop from an empty circular buffer");
+                PrintMessageNow(LogLevel::ERROR, __LINE__, __FILE__, "Attempted to pop from an empty circular buffer");
                 return;
             }
 
@@ -122,7 +142,7 @@ class CircularBuffer
             if (m_Full)
             {
                 // Log immediately using the Logger class's formatting and bypass the queue
-                PrintMessageNow(LogLevel::ERROR, __FILE__, __LINE__, 
+                PrintMessageNow(LogLevel::ERROR, __LINE__, __FILE__, 
                     std::format("Attempted to emplace into a full circular buffer. Current Buffer Size: {}", m_Buffer.capacity()));
                 
                 if (!overwriteOldest)
@@ -138,7 +158,8 @@ class CircularBuffer
             }
 
             // Place the new item at the write position
-            new (&m_Buffer[m_WriteIdx]) T(std::forward<Args>(args)...); // Placement new
+            //new (&m_Buffer[m_WriteIdx]) T(std::forward<Args>(args)...); // Placement new
+            m_Buffer[m_WriteIdx] = std::move(T(std::forward<Args>(args)...));
             IncrementWriteIdx(); // Move write index forward
             m_Full = (m_ReadIdx == m_WriteIdx);
         }

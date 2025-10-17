@@ -27,7 +27,7 @@ constexpr inline std::string LogLevelToString(const LogLevel level)
     }
 }
 
-// Public static method to get the time of day in hh:mm:ss format
+// Function to get the time of day in hh:mm:ss format
 inline std::string GetTimeString(const std::chrono::time_point<std::chrono::system_clock> now)
 {
     // Get the time of day in hh:mm:ss format
@@ -41,33 +41,33 @@ inline std::string GetTimeString(const std::chrono::time_point<std::chrono::syst
         localTime.tm_hour, localTime.tm_min, localTime.tm_sec, ms.count());
 }
 
-// Helper function to extract base file name from __FILE__
+// Function to extract base file name from __FILE__
 constexpr static inline std::string_view GetBaseFileName(std::string_view file)
 {
-    size_t lastSep = file.find_last_of("/\\");
+    const size_t lastSep = file.find_last_of("/\\");
     return (lastSep == std::string_view::npos) ? file : file.substr(lastSep + 1);
 }
 
-// Private static method to print a message to the console with the correct format
+// Function to print a message to the console with the correct format
 inline void PrintMessage(const std::string& timeString,
-                                const LogLevel     level,
-                                const std::string& sourceFile,
-                                const unsigned int lineNumber,
-                                const std::string& message)
+                         const LogLevel     level,
+                         const unsigned int lineNumber,
+                         const std::string& sourceFile,
+                         const std::string& message)
 {
     // Output the message
     std::println("{}  {:<8} [{:<20}:{:<3}] {}", timeString, LogLevelToString(level), GetBaseFileName(sourceFile), lineNumber, message);
 }
 
-// Public static method to immediately print a message to the console. 
-// Useful when the program is crashing and you want to log a message before exiting.
+// Function to immediately print a message to the console. 
+// Useful when the program is crashing and you want to log a message before exiting or for logging from places where the logger instance is not available.
 inline void PrintMessageNow(const LogLevel     level,
-                                    const std::string& sourceFile,
-                                    const unsigned int lineNumber,
-                                    const std::string& message)
+                            const unsigned int lineNumber,
+                            const std::string& sourceFile,
+                            const std::string& message)
 {
     // Output the message
-    PrintMessage(GetTimeString(std::chrono::system_clock::now()), level, sourceFile, lineNumber, message);
+    PrintMessage(GetTimeString(std::chrono::system_clock::now()), level, lineNumber, sourceFile, message);
 }
 
 #endif // !LOGGER_TYPES_H

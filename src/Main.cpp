@@ -4,6 +4,8 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <array>
+#include <numbers>
 
 // External Libraries includes
 #include <GL/glew.h>
@@ -11,14 +13,18 @@
 
 // Project includes
 #include "Logger.h"
-#include "Timing.h"
+#include "Timer.h"
 #include "UnitTests.h"
+#include "OpenGlUtils.h"
 #include "Renderer.h"
 #include "VertexBuffer.h"
 #include "VertexBufferLayout.h"
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
+#include "Application.h"
+
+// #define TESTING
 
 int main() 
 {
@@ -27,8 +33,8 @@ int main()
     loggerPtr = &logger;
 
     // Run the unit tests
-    LogTimerTest();
-
+    // LogTimerTest();
+#ifndef TESTING
     LOG(LogLevel::INFO, "Hello, World! This is my OpenGL application using GLEW and GLFW.");
     
     // Initialize GLFW
@@ -51,6 +57,13 @@ int main()
         glfwTerminate();
         return -1;
     }
+
+    // Set the key callback function
+    glfwSetKeyCallback(window, Application::KeyCallback);
+
+    // Set the glfw user pointer to application state
+    Application appState;
+    glfwSetWindowUserPointer(window, &appState);
 
     // Set the current context to the created window
     glfwMakeContextCurrent(window);
@@ -79,18 +92,23 @@ int main()
 
     unsigned int indices[] = {0, 1, 2, 
                               2, 3, 0};
+
+    appState.m_positions = positions;
+    appState.m_positionsLength = sizeof(positions) / sizeof(positions[0]);
+    appState.m_indices = indices;
+    appState.m_indicesLength = sizeof(indices) / sizeof(indices[0]);
     
     {
         VertexArray va;
         // Create a vertex array buffer to put data into
-        VertexBuffer vb(positions, 4 * 2 * sizeof(positions[0]));
+        VertexBuffer vb(appState.m_positions, appState.m_positionsLength * sizeof(appState.m_positions[0]));
         
         VertexBufferLayout layout;
         layout.Push<float>(2);
         va.AddBuffer(vb, layout);
 
         // Create an index buffer object (IBO) for element array
-        IndexBuffer ib(indices, 6);
+        IndexBuffer ib(appState.m_indices, appState.m_indicesLength);
         
         // Create shaders
         Shader shader("res/shaders/Basic.shader");
@@ -102,47 +120,46 @@ int main()
         ib.Unbind();
         shader.Unbind();
 
+        // Create renderer object
+        Renderer renderer;
+
         float redChannelColor = 0.0f;
         float increment = 0.05f;
+
+        Timer frameTimer{false};
         // Loop until the user closes the window
         while (!glfwWindowShouldClose(window))
         {
+            frameTimer.Start();
+
             // Clear here
-            GL_CALL(glClear(GL_COLOR_BUFFER_BIT));
+            renderer.Clear();
 
             // Bind shader and set up the uniforms
             shader.Bind();
             shader.SetUniform4f("u_Color", redChannelColor, 0.3f, 0.8f, 1.0f); // Set the color uniform
 
-            // Bind the Vertex Array Object (VAO)
-            va.Bind();
-
-            // Bind the index buffer
-            ib.Bind();
+            // Update vertex buffer data
+            vb.UpdateData(appState.m_positions, appState.m_positionsLength * sizeof(appState.m_positions[0]));
+            va.AddBuffer(vb, layout); // Re-add the buffer to update the VAO state
 
             // Draw the triangle using the shader program
-            GL_CALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
-
-            // Update the color value for the next frame
-            if (redChannelColor > 1.0f)
-            {
-                increment = -0.05f; // Reverse direction
-            }
-            else if (redChannelColor < 0.0f)
-            {
-                increment = 0.05f; // Reverse direction
-            }
-            redChannelColor += increment; // Update the red component
+            renderer.Draw(va, ib, shader);
 
             // Swap front and back buffers
             glfwSwapBuffers(window);
 
             // Poll for and process events
             glfwPollEvents();
+            
+            std::chrono::microseconds frameTime = frameTimer.Stop();
+            // Print out the time difference
+            //LOG(LogLevel::INFO, "Frame time delta = {}us, fps={}", frameTime.count(), 1e6 / frameTime.count());
         }
     }
     LOG(LogLevel::INFO, "GLEW version: {}", reinterpret_cast<const char*>(glewGetString(GLEW_VERSION))); 
     glfwTerminate();
 
+    #endif // TESTING
     return 0;
 }

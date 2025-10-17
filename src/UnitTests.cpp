@@ -5,50 +5,95 @@
 #include <print>
 
 #include "Logger.h"
-#include "Timing.h"
+#include "Timer.h"
 
 void LogTimerTest()
 {
     const unsigned int numIterations = 1000;
+    const bool timeEachPrint = true;
+
 
     // Run the test for cout durations
     std::chrono::microseconds totalCoutTime = std::chrono::microseconds(0);
-    for (unsigned int i = 0; i < numIterations; ++i)
+    if (timeEachPrint)
+    {
+        for (unsigned int i = 0; i < numIterations; ++i)
+        {
+            Timer timer;
+            timer.Start();
+
+            // Simulate some work
+            std::cout << std::format("cout #{}\n", i);
+
+            totalCoutTime += timer.Stop(static_cast<int>(i));
+        }
+    }
+    else
     {
         Timer timer;
         timer.Start();
-
-        // Simulate some work
-        std::cout << std::format("cout #{}\n", i);
-
-        totalCoutTime += timer.Stop(static_cast<int>(i));
+        for (unsigned int i = 0; i < numIterations; ++i)
+        {
+            // Simulate some work
+            std::cout << std::format("cout #{}\n", i);
+        }
+        totalCoutTime = timer.Stop();
     }
 
     // Run the test for print durations
     std::chrono::microseconds totalPrintTime = std::chrono::microseconds(0);
-    for (unsigned int i = 0; i < numIterations; ++i)
+    if (timeEachPrint)
+    {
+        for (unsigned int i = 0; i < numIterations; ++i)
+        {
+            Timer timer;
+            timer.Start();
+
+            // Simulate some work
+            std::println("println #{}", i);
+
+            totalPrintTime += timer.Stop(static_cast<int>(i));
+        }
+    }
+    else
     {
         Timer timer;
         timer.Start();
-
-        // Simulate some work
-        std::println("println #{}", i);
-
-        totalPrintTime += timer.Stop(static_cast<int>(i));
+        for (unsigned int i = 0; i < numIterations; ++i)
+        {
+            // Simulate some work
+            std::println("println #{}", i);
+        }
+        totalPrintTime = timer.Stop();
     }
 
     // Run the test for the logger durations
     std::chrono::microseconds totalLogTime = std::chrono::microseconds(0);
-    for (unsigned int i = 0; i < numIterations; ++i)
+    if (timeEachPrint)
+    {
+        for (unsigned int i = 0; i < numIterations; ++i)
+        {
+            Timer timer;
+            timer.Start();
+
+            // Simulate some work
+            LOG(LogLevel::INFO, "LOG #{}", i);
+
+            totalLogTime += timer.Stop(static_cast<int>(i));
+        }
+    }
+    else
     {
         Timer timer;
         timer.Start();
-
-        // Simulate some work
-        LOG(LogLevel::INFO, "LOG #{}", i);
-
-        totalLogTime += timer.Stop(static_cast<int>(i));
+        for (unsigned int i = 0; i < numIterations; ++i)
+        {
+            // Simulate some work
+            LOG(LogLevel::INFO, "LOG #{}", i);
+        }
+        totalLogTime = timer.Stop();
     }
+
     // Log the average time taken for cout and the logger
     LOG(LogLevel::WARNING, "-----------------------------");
     LOG(LogLevel::WARNING, "Cout avg = {}us",  totalCoutTime.count()  / numIterations);

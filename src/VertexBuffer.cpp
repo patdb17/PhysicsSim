@@ -1,13 +1,13 @@
 #include "VertexBuffer.h"
 
-#include "Renderer.h"
+#include "OpenGlUtils.h"
 
 VertexBuffer::VertexBuffer(const void *data, unsigned int size)
 {
     // Create a vertex array buffer to put data into
     GL_CALL(glGenBuffers(1, &m_RendererId));
     GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, m_RendererId));
-    GL_CALL(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
+    GL_CALL(glBufferData(GL_ARRAY_BUFFER, size, data, GL_DYNAMIC_DRAW));
 }
 
 VertexBuffer::~VertexBuffer()
@@ -23,4 +23,10 @@ void VertexBuffer::Bind() const
 void VertexBuffer::Unbind() const
 {
     GL_CALL(glBindBuffer(GL_ARRAY_BUFFER, 0));
+}
+
+void VertexBuffer::UpdateData(const void* data, unsigned int size)
+{
+    Bind();
+    GL_CALL(glBufferSubData(GL_ARRAY_BUFFER, 0, size, data));
 }

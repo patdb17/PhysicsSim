@@ -49,7 +49,7 @@ void Logger::RunLogger()
 
     // Output initial message indicating the logger has started
     std::println("----------------------------------------------------------------------------------------");
-    PrintMessage(timeString, LogLevel::INFO, __FILE__, __LINE__, dateString);
+    PrintMessage(timeString, LogLevel::INFO, __LINE__, __FILE__, dateString);
     std::println("----------------------------------------------------------------------------------------");
 
     // Run loop until no more messages to log and the class is being destroyed
@@ -81,7 +81,7 @@ void Logger::RunLogger()
         const std::string timeString = GetTimeString(msg.messageTime);
 
         // Output the message
-        PrintMessage(timeString, msg.level, msg.sourceFile, msg.lineNumber, msg.message);
+        PrintMessage(timeString, msg.level, msg.lineNumber, msg.sourceFile, msg.message);
     }
 
     // End the logging with two empty lines

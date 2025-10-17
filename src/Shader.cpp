@@ -1,5 +1,5 @@
 #include "Shader.h"
-#include "Renderer.h"
+#include "OpenGlUtils.h"
 
 #include <fstream>
 

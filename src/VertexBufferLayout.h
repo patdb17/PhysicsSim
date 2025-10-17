@@ -7,7 +7,7 @@
 #include <GL/glew.h>
 
 #include "Logger.h"
-#include "Renderer.h"
+#include "OpenGlUtils.h"
 
 struct VertexBufferElement
 {
@@ -24,7 +24,7 @@ struct VertexBufferElement
             case GL_UNSIGNED_BYTE: return sizeof(GLubyte);
             default:
                 // Log an error message if an unsupported type is encountered
-                PrintMessageNow(LogLevel::ERROR, __FILE__, __LINE__, 
+                PrintMessageNow(LogLevel::ERROR, __LINE__, __FILE__, 
                     std::format("Unsupported type in VertexBufferElement: {}", type));              
                 ASSERT(false); // Unsupported type
                 return 0; // Unsupported type

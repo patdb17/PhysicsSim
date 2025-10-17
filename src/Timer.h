@@ -4,8 +4,6 @@
 #include <chrono> 
 #include <mutex>
 
-typedef std::chrono::time_point<std::chrono::high_resolution_clock> MsTimer;
-
 class Timer
 {
 public:
@@ -15,7 +13,9 @@ public:
     void                      Start();
     std::chrono::microseconds Stop(const int id = -1);
 
-private:    
+private: 
+    using MsTimer = std::chrono::time_point<std::chrono::high_resolution_clock>;
+       
     MsTimer m_startTime;
     bool    m_printTime = true;
 };
