@@ -17,6 +17,7 @@ typedef enum
 class Application
 {
     public:
+        bool m_updatePositions = false;
         float* m_positions = nullptr;
         unsigned int m_positionsLength = 0;
 

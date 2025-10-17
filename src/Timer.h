@@ -1,5 +1,5 @@
-#ifndef TIMING_H
-#define TIMING_H
+#ifndef TIMER_H
+#define TIMER_H
 
 #include <chrono> 
 #include <mutex>
@@ -20,4 +20,4 @@ private:
     bool    m_printTime = true;
 };
 
-#endif // !TIMING_H
+#endif // !TIMER_H

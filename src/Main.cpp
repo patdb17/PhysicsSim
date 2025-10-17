@@ -94,6 +94,7 @@ int main()
                               2, 3, 0};
 
     appState.m_positions = positions;
+    appState.m_updatePositions = true; // Add a flag to track changes in positions
     appState.m_positionsLength = sizeof(positions) / sizeof(positions[0]);
     appState.m_indices = indices;
     appState.m_indicesLength = sizeof(indices) / sizeof(indices[0]);
@@ -139,8 +140,12 @@ int main()
             shader.Bind();
             shader.SetUniform4f("u_Color", redChannelColor, 0.3f, 0.8f, 1.0f); // Set the color uniform
 
-            // Update vertex buffer data
-            vb.UpdateData(appState.m_positions, appState.m_positionsLength * sizeof(appState.m_positions[0]));
+            // Update vertex buffer data only if positions have changed
+            if (appState.m_updatePositions) 
+            {
+                vb.UpdateData(appState.m_positions, appState.m_positionsLength * sizeof(appState.m_positions[0]));
+                appState.m_updatePositions = false; // Reset the flag after updating
+            }
             va.AddBuffer(vb, layout); // Re-add the buffer to update the VAO state
 
             // Draw the triangle using the shader program
@@ -154,7 +159,7 @@ int main()
             
             std::chrono::microseconds frameTime = frameTimer.Stop();
             // Print out the time difference
-            //LOG(LogLevel::INFO, "Frame time delta = {}us, fps={}", frameTime.count(), 1e6 / frameTime.count());
+            LOG(LogLevel::INFO, "Frame time delta = {}us, fps={}", frameTime.count(), 1e6 / frameTime.count());
         }
     }
     LOG(LogLevel::INFO, "GLEW version: {}", reinterpret_cast<const char*>(glewGetString(GLEW_VERSION))); 

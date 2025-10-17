@@ -58,10 +58,13 @@ std::optional<std::string> Application::HandleUpKey(const KeyAction action)
 
                 LOG(LogLevel::DEBUG, "Position {}: ({}, {})", i / 2, m_positions[i - 1], m_positions[i]);
             }
+            m_updatePositions = true; // Set the flag to indicate positions have changed
             break;
+
         case KEY_ACTION_RELEASE:
             // Handle key release if needed
             break;
+
         default:
             break;
     }
@@ -74,7 +77,7 @@ std::optional<std::string> Application::HandleDownKey(const KeyAction action)
     switch (action)
     {
         case KEY_ACTION_PRESS:
-            // Move all y-positions left by 0.1 units
+            // Move all y-positions down by 0.1 units
             for (unsigned int i = 1; i < m_positionsLength; i += 2)
             {
                 m_positions[i] -= 0.1f; // Move down by 0.1 units
@@ -85,7 +88,9 @@ std::optional<std::string> Application::HandleDownKey(const KeyAction action)
 
                 LOG(LogLevel::DEBUG, "Position {}: ({}, {})", i / 2, m_positions[i - 1], m_positions[i]);
             }
+            m_updatePositions = true; // Set the flag to indicate positions have changed
             break;
+            
         case KEY_ACTION_RELEASE:
             // Handle key release if needed
             break;
@@ -111,7 +116,9 @@ std::optional<std::string> Application::HandleLeftKey(const KeyAction action)
 
                 LOG(LogLevel::DEBUG, "Position {}: ({}, {})", i / 2, m_positions[i], m_positions[i+1]);
             }
+            m_updatePositions = true; // Set the flag to indicate positions have changed
             break;
+
         case KEY_ACTION_RELEASE:
             // Handle key release if needed
             break;
@@ -126,7 +133,7 @@ std::optional<std::string> Application::HandleRightKey(const KeyAction action)
     switch (action)
     {
         case KEY_ACTION_PRESS:
-            // Move all x-positions up by 0.1 units
+            // Move all x-positions right by 0.1 units
             for (unsigned int i = 0; i < m_positionsLength; i += 2)
             {
                 m_positions[i] += 0.1f; // Move right by 0.1 units
@@ -137,7 +144,9 @@ std::optional<std::string> Application::HandleRightKey(const KeyAction action)
 
                 LOG(LogLevel::DEBUG, "Position {}: ({}, {})", i / 2, m_positions[i], m_positions[i+1]);
             }
+            m_updatePositions = true; // Set the flag to indicate positions have changed
             break;
+            
         case KEY_ACTION_RELEASE:
             // Handle key release if needed
             break;
